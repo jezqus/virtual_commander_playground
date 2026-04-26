@@ -1,0 +1,190 @@
+<html>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		
+		#mapPanel {
+			 overflow-y: scroll;
+			 overflow-x: scroll;
+			 float: left;
+			 height: 1000px;
+			 width: 1000px;
+		}
+		
+		.element {
+			fill:lime;
+			stroke:purple;
+			stroke-width:1;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.01;
+		}
+		
+		.target {
+			fill:lime;
+			stroke:red;
+			stroke-width:3;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.01;
+		}
+		
+		.route {
+			fill:gray;
+			stroke:black;
+			stroke-width:1;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.3;
+		}
+		
+		.attack-marker {
+			fill:red;
+			stroke:black;
+			stroke-width:1;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.3;
+		}
+		
+		.routeCost
+		{
+			z-index: 91;
+		}
+		
+		.grass {
+			background-color: red;		}
+		
+		.status-panel
+		{
+			width: 400px;
+			float: left;
+		}		
+		.header-panel
+		{
+			margin-left: 20px;
+			margin-top: 0px;
+			height: 30px;
+		}
+		
+		.unit-power
+		{
+			z-index: 91;
+			font-size:8px;
+		}
+		 	</style>
+	 <body ng-app="myApp">
+	<div class="page-header header-panel">
+	  <h3>Virtual commander <small>on virtual battlefield</small></h3>
+	</div>
+	
+	<nav class="navbar navbar-default">
+	  <div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+		  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		  </button>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		  <ul class="nav navbar-nav">
+		  <li class="dropdown">
+			  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">New game<span class="caret"></span></a>
+			  <ul class="dropdown-menu">
+				<li><a href="#">Scenario 1</a></li>
+				<li><a href="#">Scenario 2</a></li>
+			  </ul>
+			</li>
+			<li class="dropdown">
+			  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Actions<span class="caret"></span></a>
+			  <ul class="dropdown-menu">
+				<li><a onClick="Game.EndTurn();">End turn</a></li>
+				<li><a onClick="Game.EndScenario();">End scenario</a></li>
+			  </ul>
+			</li>
+			<li><a onClick="alert('... ask me');">Help</a></li>
+			<li><a onClick="alert('Virtual Commander ver.0.2beta by Jez');">About</a></li>
+			
+		  </ul>
+		</div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+	
+	<div id="mapPanel">
+		<svg id="map" height="800" width="1000" style="z-index:1; float:left;">
+		</svg>
+	</div>
+	<div id="rigth-panel" class="status-panel">
+		<div class="panel panel-default" ng-controller="UnitStatusController">
+		  <div class="panel-heading">Selected mode</div>
+		  <div class="panel-body">
+			<img src="grass.png" onclick="SetTerrainMode();"> Terrain<br />
+			<img src="river_1.png" onclick="SetRiverMode();"> Rivers<br />
+			<img src="road_1.png" onclick="SetRoadMode();"> Roads<br />
+		  </div>
+		</div>
+		<div class="panel panel-default" id="terrain">
+		  <div class="panel-heading">Terrain</div>
+		  <div class="panel-body">
+			<img src="grass.png" onclick="SetTerrain(0);"><br />
+			<img src="forest.png" onclick="SetTerrain(1);"><br />
+			<img src="hill.png" onclick="SetTerrain(2);"><br />
+			<img src="mountain.png" onclick="SetTerrain(3);"><br />
+			<img src="village.png" onclick="SetTerrain(4);"><br />
+			<img src="water.png" onclick="SetTerrain(5);"><br />
+			<img src="marsh.png" onclick="SetTerrain(6);"><br />
+		  </div>
+		</div>
+		<div class="panel panel-default" id="river">
+		  <div class="panel-heading">Rivers</div>
+		  <div class="panel-body">
+			<img src="river_1.png" onclick="SetRiver(0);"><br />
+			<img src="river_2.png" onclick="SetRiver(1);"><br />
+			<img src="river_3.png" onclick="SetRiver(2);"><br />
+			<img src="river_4.png" onclick="SetRiver(3);"><br />
+			<img src="river_5.png" onclick="SetRiver(4);"><br />
+			<img src="river_6.png" onclick="SetRiver(5);"><br />
+		  </div>
+		</div>
+		<div class="panel panel-default" id="road">
+		  <div class="panel-heading">Roads</div>
+		  <div class="panel-body">
+			<img src="road_1.png" onclick="SetRoad(0);"><br />
+			<img src="road_2.png" onclick="SetRoad(1);"><br />
+			<img src="road_3.png" onclick="SetRoad(2);"><br />
+			<img src="road_4.png" onclick="SetRoad(3);"><br />
+			<img src="road_5.png" onclick="SetRoad(4);"><br />
+			<img src="road_6.png" onclick="SetRoad(5);"><br />
+		  </div>
+		</div>
+		<button type="button" class="btn btn-default" onClick="GetMapJson();">Get map json</button>
+		
+		<textarea id="mapJson"></textarea>
+	</div>
+
+	<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
+	<script type="text/javascript" src="js/underscore-min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/radio.min.js"></script>
+    
+	<script type="text/javascript" src="js/game/graphics.js"></script>
+	<script type="text/javascript" src="js/game/gridGenerator.js"></script>
+	<script type="text/javascript" src="js/game/unitGenerator.js"></script>
+	<script type="text/javascript" src="js/game/terrainHelper.js"></script>
+	<script type="text/javascript" src="js/game/battleManager.js"></script>
+	<script type="text/javascript" src="js/game/routeDrawer.js"></script>
+	<script type="text/javascript" src="js/game/routeCalculator.js"></script>
+	<script type="text/javascript" src="js/game/actionManager.js"></script>
+	<script type="text/javascript" src="js/game/mapDrawer.js"></script>	
+	<script type="text/javascript" src="js/game/game.js"></script>
+	<script type="text/javascript" src="js/game/mapGenerator.js"></script>
+
+</body>
+</html>

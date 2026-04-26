@@ -1,0 +1,302 @@
+<html>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		
+		.element {
+			fill:lime;
+			stroke:purple;
+			stroke-width:1;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.01;
+		}
+		
+		.target {
+			fill:lime;
+			stroke:red;
+			stroke-width:3;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.01;
+		}
+		
+		.route {
+			fill:gray;
+			stroke:black;
+			stroke-width:1;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.3;
+		}
+		
+		.attack-marker {
+			fill:red;
+			stroke:black;
+			stroke-width:1;
+			fill-rule:nonzero;
+			z-index: 91;
+			fill-opacity:0.3;
+		}
+		
+		.routeCost
+		{
+			z-index: 91;
+		}
+		
+		.grass {
+			background-color: red;
+		}
+		
+		#mapPanel{
+			width: 800px;
+		}
+		
+		.status-panel
+		{
+			width: 400px;
+			float: left;
+		}
+		
+		.header-panel
+		{
+			margin-left: 20px;
+			margin-top: 0px;
+			height: 30px;
+		}
+		
+		.unit-power
+		{
+			z-index: 91;
+			font-size:8px;
+		}
+		
+ 	</style>
+	<script src="js/angular.min.js"></script>
+ <body ng-app="myApp">
+	<div class="page-header header-panel">
+	  <h3>Virtual commander <small>on virtual battlefield</small></h3>
+	</div>
+	
+	<nav class="navbar navbar-default">
+	  <div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+		  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		  </button>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		  <ul class="nav navbar-nav">
+		  <li class="dropdown">
+			  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">New game<span class="caret"></span></a>
+			  <ul class="dropdown-menu">
+				<li><a href="#" onclick="loadScenario('tutorial');">Tutorial 1</a></li>
+				<li><a href="#" onclick="loadScenario('tutorial2');">Tutorial 2</a></li>
+				<li><a href="#" onclick="loadScenario('Ilza_1864');">Iłża 1864</a></li>
+				<li><a href="#" onclick="loadScenario('Mokra_1939');">Mokra 1939</a></li>
+				
+				<li role="separator" class="divider"></li>
+				<li><a href="generator.html">Map generator</a></li>
+			  </ul>
+			</li>
+			<li class="dropdown">
+			  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Actions<span class="caret"></span></a>
+			  <ul class="dropdown-menu">
+				<li><a onClick="Game.ChangeUnitView();">Change unit view</a></li>
+				<li><a onClick="Game.EndTurn();">End turn</a></li>
+				<li><a onClick="Game.EndScenario();">End scenario</a></li>
+			  </ul>
+			</li>
+			<li><a onClick="alert('... ask me');">Help</a></li>
+			<li><a onClick="alert('Virtual Commander ver.0.2beta by Jez');">About</a></li>
+			
+		  </ul>
+		</div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+	
+	<div id="mapPanel">
+		<svg id="map" height="900" width="900" style="z-index:1; float:left;">
+		</svg>
+	</div>
+	<div id="rigth-panel" class="status-panel">
+		<div class="panel panel-default" ng-controller="TerrainStatusController">
+		  <div class="panel-heading">Terrain</div>
+		  <div class="panel-body">
+			<img ng-src="{{ terrainImage }}"><br />
+			Type: {{ type }}<br />
+			Move cost: {{ moveCost }}
+		  </div>
+		</div>
+		<div class="panel panel-default" ng-controller="UnitStatusController">
+		  <div class="panel-heading">Selected unit</div>
+		  <div class="panel-body">
+			Name: {{ name }}<br />
+			Attack: {{ attack }}<br />
+			Defense: {{ defense }} {{ fortify }}<br />
+			Moves: {{ moves }}<br />
+			Range: {{ range }}<br />
+			<a href="#" ng-click="Details()">
+				<span class="glyphicon glyphicon-list-alt" title="Details"></span>
+				Unit details
+			</a><br /><br />
+			<div>
+				Possible actions:<br /><br />
+				<span class="glyphicon glyphicon-list-alt" title="Details" ng-click="Details()"></span>
+				<span class="glyphicon glyphicon-plus-sign" title="Reinforce" ng-click="Reinforce()"></span>
+				<span class="glyphicon glyphicon-download-alt" title="Fortify" ng-click="Fortify()"></span>
+			</div>
+		  </div>
+		</div>
+	</div>
+	
+	<!-- Modal unit details -->
+	<div class="modal fade" id="unitDetails" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" ng-controller="UnitDetailsController">
+	  <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		  <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="myModalLabel">Unit details</h4>
+		  </div>
+		  <div class="modal-body">
+			Name: {{ name }}<br />
+			Attack: {{ attack }}<br />
+			Defense: {{ defense }} {{ fortify }}<br />
+			Moves: {{ moves }}<br />
+			Range: {{ range }}<br /><br />
+			<ul ng-repeat="eq in equipment">
+				<li>{{ eq.name }} {{ eq.num }}/{{ eq.max }} (S:{{ eq.def.strength }} A:{{ eq.def.softAttack }} D:{{ eq.def.defensiveness }} R:{{ eq.def.range }} M:{{ eq.def.move }} )</li>
+			</ul>
+		  </div>
+		  <div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		  </div>
+		</div>
+	  </div>
+	</div>
+
+	<!-- Modal Battle result -->
+	<div class="modal fade" id="battleResult" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" ng-controller="BattleResultController">
+	  <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		  <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="myModalLabel">Battle result</h4>
+		  </div>
+		  <div class="modal-body">
+			{{ battleResult.result }}<br /><br />
+			<ul class="nav nav-tabs" role="tablist">
+				<li role="presentation" class="active">
+					<a href="#attacker" aria-controls="attacker" role="tab" data-toggle="tab">Attacker</a>
+				</li>
+				<li role="presentation">
+					<a href="#defender" aria-controls="defender" role="tab" data-toggle="tab">Defender</a>
+				</li>
+			</ul>
+			<!-- Tab panes -->
+			<div class="tab-content">
+				<div role="tabpanel" class="tab-pane active" id="attacker">
+					Unit name: {{ battleResult.attackerName }} <br /><br />
+					
+					<ul ng-repeat="eq in battleResult.eqAttacker">
+						<li>{{ eq.name }} {{ eq.num }}/{{ eq.max }} (-{{ eq.lost }})</li>
+					</ul>
+				</div>
+				<div role="tabpanel" class="tab-pane" id="defender">
+					Unit name: {{ battleResult.defenderName }} <br /><br />
+					<ul ng-repeat="eq in battleResult.eqDefender">
+						<li>{{ eq.name }} {{ eq.num }}/{{ eq.max }} (-{{ eq.lost }})</li>
+					</ul>
+				</div>
+			</div>
+		  </div>
+		  <div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		  </div>
+		</div>
+	  </div>
+	</div>
+
+	<!-- Modal Scenario result -->
+	<div class="modal fade" id="scenarioResult" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" ng-controller="ScenarioResultController">
+	  <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		  <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="myModalLabel">Scenario result</h4>
+		  </div>
+		  <div class="modal-body">
+			{{ winner }}<br /><br />
+			<ul class="nav nav-tabs" role="tablist">
+				<li role="presentation" class="active">
+					<a href="#pl1" aria-controls="pl1" role="tab" data-toggle="tab">Player 1</a>
+				</li>
+				<li role="presentation">
+					<a href="#pl2" aria-controls="pl2" role="tab" data-toggle="tab">Player 2</a>
+				</li>
+			</ul>
+			<!-- Tab panes -->
+			<div class="tab-content">
+				<div role="tabpanel" class="tab-pane active" id="pl1">
+					<br />Player 1 victory points: {{ player1TotalPoints }} including {{ player1VictoryPoints }} from victory fields<br /><br />
+					<ul ng-repeat="unit in player1Units">
+						<li>{{ unit.name }} {{ GetStatus(unit) }}</li>
+					</ul>
+				</div>
+				<div role="tabpanel" class="tab-pane" id="pl2">
+					<br />Player 2 victory points: {{ player2TotalPoints }} including {{ player2VictoryPoints }} from victory fields<br /><br />
+					<ul ng-repeat="unit in player2Units">
+						<li>{{ unit.name }} {{ GetStatus(unit) }}</li>
+					</ul>
+				</div>
+			</div>
+		  </div>
+		  <div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		  </div>
+		</div>
+	  </div>
+	</div>
+	
+	<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
+	<script type="text/javascript" src="js/underscore-min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/radio.min.js"></script>
+	
+	<script type="text/javascript" src="js/game/equipmentJson.js"></script>
+	<script type="text/javascript" src="js/game/equipmentWW2.js"></script>
+	<script type="text/javascript" src="js/game/graphics.js"></script>
+	<script type="text/javascript" src="js/game/gridGenerator.js"></script>
+	<script type="text/javascript" src="js/game/unitGenerator.js"></script>
+	<script type="text/javascript" src="js/game/terrainHelper.js"></script>
+	<script type="text/javascript" src="js/game/unitHelper.js"></script>
+	<script type="text/javascript" src="js/game/battleManager.js"></script>
+	<script type="text/javascript" src="js/game/routeDrawer.js"></script>
+	<script type="text/javascript" src="js/game/routeCalculator.js"></script>
+	<script type="text/javascript" src="js/game/actionManager.js"></script>
+	<script type="text/javascript" src="js/game/mapDrawer.js"></script>	
+	<script type="text/javascript" src="js/game/game.js"></script>
+	<script type="text/javascript" src="js/game/map.js"></script>
+	
+	
+	<!-- Modules -->
+    <script src="js/app.js"></script>
+
+    <!-- Controllers -->
+    <script src="js/controllers/UnitStatusController.js"></script>
+	<script src="js/controllers/UnitDetailsController.js"></script>
+	<script src="js/controllers/TerrainStatusController.js"></script>
+	<script src="js/controllers/BattleResultController.js"></script>
+	<script src="js/controllers/ScenarioResultController.js"></script>
+	
+
+</body>
+</html>
